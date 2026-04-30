@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcare-app
+  template:
+    metadata:
+      labels:
+        app: healthcare-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: healthcare-app
+        image: zahraaaaaabidha/healthcare-app:latest
+        ports:
+        - containerPort: 5000
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-svc
+spec:
+  type: NodePort
+  selector:
+    app: healthcare-app
+  ports:
+  - port: 80
+    targetPort: 5000
+    nodePort: 30082
