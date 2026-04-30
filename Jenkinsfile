@@ -14,20 +14,13 @@ pipeline {
       }
     }
 
-    stage('2 - SAST: Secrets Scan') {
+    groovystage('2 - SAST: Secrets Scan') {
       steps {
         sh '''
           echo "=== Scanning for hardcoded secrets ==="
-          if grep -rn "password\s*=\s*['\"][^'\"]*['\"]" . --include="*.py" | grep -v ".git"; then
-            echo "WARNING: Possible hardcoded password found"
-          else
-            echo "PASS: No hardcoded secrets found"
-          fi
-          if grep -rn "api_key\s*=\s*['\"][^'\"]*['\"]" . --include="*.py" | grep -v ".git"; then
-            echo "WARNING: Possible hardcoded API key found"
-          else
-            echo "PASS: No hardcoded API keys found"
-          fi
+          grep -rn "password" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check for hardcoded passwords" || echo "PASS: No hardcoded passwords found"
+          grep -rn "api_key" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check for hardcoded API keys" || echo "PASS: No hardcoded API keys found"
+          grep -rn "secret" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check for hardcoded secrets" || echo "PASS: No hardcoded secrets found"
           echo "Secrets scan complete"
         '''
       }
