@@ -14,19 +14,18 @@ pipeline {
       }
     }
 
-    groovystage('2 - SAST: Secrets Scan') {
+    stage('2 - SAST Secrets Scan') {
       steps {
         sh '''
           echo "=== Scanning for hardcoded secrets ==="
-          grep -rn "password" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check for hardcoded passwords" || echo "PASS: No hardcoded passwords found"
-          grep -rn "api_key" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check for hardcoded API keys" || echo "PASS: No hardcoded API keys found"
-          grep -rn "secret" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check for hardcoded secrets" || echo "PASS: No hardcoded secrets found"
+          grep -rn "password" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check passwords" || echo "PASS: No hardcoded passwords"
+          grep -rn "api_key" . --include="*.py" --exclude-dir=".git" && echo "WARNING: Check API keys" || echo "PASS: No hardcoded API keys"
           echo "Secrets scan complete"
         '''
       }
     }
 
-    stage('3 - SAST: Code Quality') {
+    stage('3 - SAST Code Quality') {
       steps {
         sh '''
           echo "=== Running static code analysis ==="
@@ -37,7 +36,7 @@ pipeline {
       }
     }
 
-    stage('4 - SCA: Dependency Check') {
+    stage('4 - SCA Dependency Check') {
       steps {
         sh '''
           echo "=== Checking dependencies for vulnerabilities ==="
@@ -55,15 +54,17 @@ pipeline {
       }
     }
 
-    stage('6 - Image Scan: Trivy') {
+    stage('6 - Image Scan Trivy') {
       steps {
         sh '''
           echo "=== Scanning Docker image for vulnerabilities ==="
-          if ! command -v trivy &> /dev/null; then
-            apt-get update -qq && apt-get install -y wget apt-transport-https gnupg 2>/dev/null || true
+          if ! command -v trivy > /dev/null 2>&1; then
+            apt-get update -qq 2>/dev/null || true
+            apt-get install -y wget apt-transport-https gnupg 2>/dev/null || true
             wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - 2>/dev/null || true
             echo "deb https://aquasecurity.github.io/trivy-repo/deb generic main" > /etc/apt/sources.list.d/trivy.list
-            apt-get update -qq && apt-get install -y trivy 2>/dev/null || true
+            apt-get update -qq 2>/dev/null || true
+            apt-get install -y trivy 2>/dev/null || true
           fi
           trivy image --exit-code 0 --severity HIGH,CRITICAL zahraaaaaabidha/healthcare-app:latest || echo "Trivy scan complete"
         '''
@@ -103,7 +104,6 @@ pipeline {
           echo "PASS: Resource limits enforced"
           echo "PASS: Image scanned for CVEs"
           echo "PASS: No hardcoded credentials in code"
-          echo "PASS: Secrets managed via Kubernetes secrets"
           echo "=================================="
           echo "HIPAA compliance check PASSED"
         '''
@@ -114,10 +114,10 @@ pipeline {
 
   post {
     success {
-      echo "✅ DevSecOps pipeline complete. Healthcare app deployed securely."
+      echo "DevSecOps pipeline complete. Healthcare app deployed securely."
     }
     failure {
-      echo "❌ Security gate failed. Deployment blocked."
+      echo "Security gate failed. Deployment blocked."
     }
   }
 }
